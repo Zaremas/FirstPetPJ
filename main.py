@@ -81,6 +81,7 @@ def main():
                 # Draw Wall
                 if event.buttons[0]:
                     grid[i][j].wall = True
+                    print("wall placed")
                 # Set Target
 
             elif event.type == pygame.MOUSEBUTTONDOWN and searching:
