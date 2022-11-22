@@ -84,6 +84,7 @@ def main():
                     i = x // box_width
                     j = y // box_height
                     grid[i][j].wall = True
+                    print("wall placed")
                 # Set Target
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
