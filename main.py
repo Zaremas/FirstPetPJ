@@ -1,5 +1,4 @@
 from tkinter import messagebox, Tk
-from turtledemo import clock
 
 import pygame
 import sys
@@ -27,10 +26,13 @@ class Box:
         self.start = False
         self.wall = False
         self.target = False
-        self.queued = False
-        self.visited = False
+        self.coffee = False
+        self.queued1 = False
+        self.queued2 = False
+        self.visited1 = False
+        self.visited2 = False
         self.neighbours = []
-        self.prior = None
+        self.prior1 = None
 
     def draw(self, win, color):
         pygame.draw.rect(win, color, (self.x * box_width, self.y * box_height, box_width-2, box_height-2))
@@ -65,8 +67,11 @@ def main():
     begin_search = False
     target_box_set = False
     start_box_set = False
+    coffee_box_set = False
+    coffee_box_found = False
     searching = True
     target_box = None
+    coffee_box = None
 
     while True:
 
@@ -75,75 +80,122 @@ def main():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+
             # Mouse Controls
-            elif event.type == pygame.MOUSEMOTION:
+            elif searching and event.type == pygame.MOUSEMOTION:
                 x = pygame.mouse.get_pos()[0]
                 y = pygame.mouse.get_pos()[1]
                 # Draw Wall
-                if event.buttons[0]:
+                if event.buttons[0] and not grid[i][j].start and not grid[i][j].target and not grid[i][j].coffee:
                     i = x // box_width
                     j = y // box_height
                     grid[i][j].wall = True
-                    print("wall placed")
                 # Set Target
 
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                x = pygame.mouse.get_pos()[0]
-                y = pygame.mouse.get_pos()[1]
-
-                if event.button == 1 and not start_box_set:
-                    i = x // box_width
-                    j = y // box_height
+            elif searching and event.type == pygame.MOUSEBUTTONDOWN:
+                keys = pygame.key.get_pressed()
+                i = pygame.mouse.get_pos()[0] // box_width
+                j = pygame.mouse.get_pos()[1] // box_height
+                if keys[pygame.K_s] and not start_box_set:
                     start_box = grid[i][j]
                     start_box.start = True
-                    start_box.visited = True
+                    start_box.visited1 = True
                     start_box_set = True
                     queue.append(start_box)
-                    
-                if event.button == 1 and start_box_set:
-                    i = x // box_width
-                    j = y // box_height
+
+                if keys[pygame.K_s] and start_box_set:
                     start_box.start = False
-                    start_box.visited = False
+                    start_box.visited1 = False
                     start_box = grid[i][j]
                     start_box.start = True
-                    start_box.visited = True
+                    start_box.visited1 = True
                     queue.clear()
                     queue.append(start_box)
 
-                if event.button==3 and not target_box_set:
-                    i = x // box_width
-                    j = y // box_height
+                if keys[pygame.K_f] and not target_box_set:
                     target_box = grid[i][j]
                     target_box.target = True
                     target_box_set = True
 
-                if event.button==3 and target_box_set:
-                    i = x // box_width
-                    j = y // box_height
+                if keys[pygame.K_f] and target_box_set:
                     target_box.target = False
                     target_box = grid[i][j]
                     target_box.target = True
+
+                if keys[pygame.K_c] and not coffee_box_set:
+                    coffee_box = grid[i][j]
+                    coffee_box.coffee = True
+                    coffee_box_set = True
+
+                if keys[pygame.K_c] and target_box_set:
+                    coffee_box.coffee = False
+                    coffee_box = grid[i][j]
+                    coffee_box.coffee = True
+
             # Start Algorithm
-            if event.type == pygame.KEYDOWN and target_box_set:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and start_box_set and target_box_set:
                 begin_search = True
 
-        if begin_search:
+        if begin_search and not coffee_box_set:
             if len(queue) > 0 and searching:
                 current_box = queue.pop(0)
-                current_box.visited = True
+                current_box.visited1 = True
                 if current_box == target_box:
                     searching = False
-                    while current_box.prior != start_box:
-                        path.append(current_box.prior)
-                        current_box = current_box.prior
+                    while current_box.prior1 != start_box:
+                        path.append(current_box.prior1)
+                        current_box = current_box.prior1
                 else:
                     for neighbour in current_box.neighbours:
-                        if not neighbour.queued and not neighbour.wall:
-                            neighbour.queued = True
-                            neighbour.prior = current_box
+                        if not neighbour.queued1 and not neighbour.wall:
+                            neighbour.queued1 = True
+                            neighbour.prior1 = current_box
                             queue.append(neighbour)
             else:
+                if searching:
+                    Tk().wm_withdraw()
+                    messagebox.showinfo("No Solution", "There is no solution!")
+                    searching = False
+
+        if begin_search and coffee_box_set:
+            if len(queue) > 0 and searching and not coffee_box_found:
+                current_box = queue.pop(0)
+                current_box.visited1 = True
+                if current_box == coffee_box:
+                    queue.clear()
+                    while current_box.prior1 != start_box:
+                        path.append(current_box.prior1)
+                        current_box = current_box.prior1
+                    for neighbour in coffee_box.neighbours:
+                        if not neighbour.wall:
+                            neighbour.queued2 = True
+                            neighbour.prior2 = coffee_box
+                            queue.append(neighbour)
+                    coffee_box_found = True
+                else:
+                    for neighbour in current_box.neighbours:
+                        if not neighbour.queued1 and not neighbour.wall:
+                            neighbour.queued1 = True
+                            neighbour.prior1 = current_box
+                            queue.append(neighbour)
+
+
+            if len(queue) > 0 and searching and coffee_box_found:
+                current_box = queue.pop(0)
+                current_box.visited2 = True
+                if current_box == target_box:
+                    searching = False
+                    while current_box.prior2 != coffee_box:
+                        path.append(current_box.prior2)
+                        current_box = current_box.prior2
+                else:
+                    for neighbour in current_box.neighbours:
+                        if not neighbour.queued2 and not neighbour.wall:
+                            neighbour.queued2 = True
+                            neighbour.prior2 = current_box
+                            queue.append(neighbour)
+
+            if len(queue) == 0 and searching:
                 if searching:
                     Tk().wm_withdraw()
                     messagebox.showinfo("No Solution", "There is no solution!")
@@ -156,19 +208,25 @@ def main():
                 box = grid[i][j]
                 box.draw(window, (100, 100, 100))
 
-                if box.queued:
-                    box.draw(window, (200, 0, 0))
-                if box.visited:
-                    box.draw(window, (0, 200, 0))
+                if box.queued1 and not box.queued2:
+                    box.draw(window, (129, 85, 212))
+                if box.visited1 and not box.visited2:
+                    box.draw(window, (187, 162, 232))
+                if box.queued2:
+                    box.draw(window, (120, 204, 112))
+                if box.visited2:
+                    box.draw(window, (177, 232, 172))
                 if box in path:
-                    box.draw(window, (0, 0, 200))
+                    box.draw(window, (255, 234, 0))
 
                 if box.start:
-                    box.draw(window, (0, 200, 200))
+                    box.draw(window, (240, 64, 55))
                 if box.wall:
                     box.draw(window, (10, 10, 10))
                 if box.target:
-                    box.draw(window, (200, 200, 0))
+                    box.draw(window, (39, 58, 230))
+                if box.coffee:
+                    box.draw(window, (148, 68, 34))
 
         pygame.display.flip()
 
