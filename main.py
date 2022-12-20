@@ -60,9 +60,6 @@ for i in range(columns):
     for j in range(rows):
         grid[i][j].set_neighbours()
 
-
-
-
 def main():
     begin_search = False
     target_box_set = False
@@ -83,27 +80,36 @@ def main():
 
             # Mouse Controls
             elif searching and event.type == pygame.MOUSEMOTION:
+
                 x = pygame.mouse.get_pos()[0]
                 y = pygame.mouse.get_pos()[1]
+                i = x // box_width
+                j = y // box_height
                 # Draw Wall
+
                 if event.buttons[0] and not grid[i][j].start and not grid[i][j].target and not grid[i][j].coffee:
                     i = x // box_width
                     j = y // box_height
+
                     grid[i][j].wall = True
                 # Set Target
+
 
             elif searching and event.type == pygame.MOUSEBUTTONDOWN:
                 keys = pygame.key.get_pressed()
                 i = pygame.mouse.get_pos()[0] // box_width
                 j = pygame.mouse.get_pos()[1] // box_height
                 if keys[pygame.K_s] and not start_box_set:
+
                     start_box = grid[i][j]
                     start_box.start = True
                     start_box.visited1 = True
                     start_box_set = True
                     queue.append(start_box)
 
+
                 if keys[pygame.K_s] and start_box_set:
+
                     start_box.start = False
                     start_box.visited1 = False
                     start_box = grid[i][j]
@@ -112,12 +118,16 @@ def main():
                     queue.clear()
                     queue.append(start_box)
 
+
                 if keys[pygame.K_f] and not target_box_set:
+
                     target_box = grid[i][j]
                     target_box.target = True
                     target_box_set = True
 
+
                 if keys[pygame.K_f] and target_box_set:
+
                     target_box.target = False
                     target_box = grid[i][j]
                     target_box.target = True
@@ -133,7 +143,9 @@ def main():
                     coffee_box.coffee = True
 
             # Start Algorithm
+
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and start_box_set and target_box_set:
+
                 begin_search = True
 
         if begin_search and not coffee_box_set:
@@ -208,6 +220,7 @@ def main():
                 box = grid[i][j]
                 box.draw(window, (100, 100, 100))
 
+
                 if box.queued1 and not box.queued2:
                     box.draw(window, (129, 85, 212))
                 if box.visited1 and not box.visited2:
@@ -221,6 +234,7 @@ def main():
 
                 if box.start:
                     box.draw(window, (240, 64, 55))
+
                 if box.wall:
                     box.draw(window, (10, 10, 10))
                 if box.target:
